@@ -1,0 +1,35 @@
+Sept 13, 2025 11:37:47 PM com.restaurant.util.AuthHelper validateStaff
+SEVERE: Error validating staff login: Some issue while connecting database: FATAL: database "restaurantdb" does not exist
+Sept 13, 2025 11:41:11 PM com.restaurant.service.CustomerService bookTable
+INFO: table 5 booked for customer David Customer
+Sept 13, 2025 11:46:03 PM com.restaurant.service.CustomerService bookTable
+WARNING: customer David Customer tried double booking
+Sept 13, 2025 11:51:18 PM com.restaurant.dao.OrderDAO createOrder
+INFO: new order 6 created for customer 1
+Sept 13, 2025 11:52:42 PM com.restaurant.dao.OrderDAO createOrder
+INFO: new order 7 created for customer 1
+Sept 13, 2025 11:55:02 PM com.restaurant.dao.OrderItemDAO getItemsByOrder
+WARNING: cannot fetch items for order 7: The column name item_id was not found in this ResultSet.
+Sept 13, 2025 11:55:28 PM com.restaurant.dao.OrderItemDAO updateItemStatus
+WARNING: cannot update status for item 6: ERROR: column "item_id" does not exist
+  Position: 42
+Sept 13, 2025 11:55:31 PM com.restaurant.dao.OrderItemDAO updateItemStatus
+WARNING: cannot update status for item 7: ERROR: column "item_id" does not exist
+  Position: 42
+Sept 13, 2025 11:55:37 PM com.restaurant.dao.OrderItemDAO getItemsByOrder
+WARNING: cannot fetch items for order 7: The column name item_id was not found in this ResultSet.
+Sept 13, 2025 11:55:48 PM com.restaurant.dao.OrderItemDAO updateItemStatus
+WARNING: cannot update status for item 6: ERROR: column "item_id" does not exist
+  Position: 42
+Sept 14, 2025 12:05:59 AM com.restaurant.service.CustomerService bookTable
+WARNING: customer David Customer tried double booking
+Sept 14, 2025 12:06:05 AM com.restaurant.dao.OrderDAO createOrder
+INFO: new order 8 created for customer 1
+Sept 14, 2025 12:06:38 AM com.restaurant.service.ChefService markOrderItemCompleted
+INFO: order item 1 marked completed by chef
+Sept 14, 2025 12:13:29 AM com.restaurant.service.WaiterService markOrderAsServed
+INFO: order 8 marked served by waiter
+Sept 14, 2025 12:19:15 AM com.restaurant.dao.BillDAO generateBill
+INFO: bill 9 created for order 8
+Sept 14, 2025 12:20:12 AM com.restaurant.service.ManagerService recordPayment
+INFO: bill 9 paid and table 1 freed
