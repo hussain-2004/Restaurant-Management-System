@@ -57,4 +57,59 @@ public class BillDAO {
         }
         return 0.0;
     }
+
+    public int generateCombinedBill(int customerId, int tableId) {
+        String sql = "SELECT oi.quantity, m.price " +
+                "FROM orders o " +
+                "JOIN order_items oi ON o.order_id = oi.order_id " +
+                "JOIN menu m ON oi.menu_id = m.menu_id " +
+                "WHERE o.customer_id = ? AND o.table_id = ?";
+
+        double total = 0.0;
+        try (Connection conn = DatabaseConnection.fetchConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, customerId);
+            stmt.setInt(2, tableId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                int qty = rs.getInt("quantity");
+                double price = rs.getDouble("price");
+                total += qty * price;
+            }
+
+            if (total > 0) {
+                String insertBill = "INSERT INTO bills (order_id, total_amount, is_paid) VALUES (?, ?, FALSE)";
+                int latestOrderId = getLatestOrderIdForCustomer(customerId);
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertBill, Statement.RETURN_GENERATED_KEYS)) {
+                    insertStmt.setInt(1, latestOrderId);
+                    insertStmt.setDouble(2, total);
+                    insertStmt.executeUpdate();
+
+                    ResultSet keys = insertStmt.getGeneratedKeys();
+                    if (keys.next()) {
+                        return keys.getInt(1); // bill_id
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LoggerUtil.grabLogger().severe("Error generating combined bill: " + e.getMessage());
+        }
+        return -1;
+    }
+
+    private int getLatestOrderIdForCustomer(int customerId) {
+        String sql = "SELECT order_id FROM orders WHERE customer_id = ? ORDER BY order_id DESC LIMIT 1";
+        try (Connection conn = DatabaseConnection.fetchConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, customerId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("order_id");
+            }
+        } catch (Exception e) {
+            LoggerUtil.grabLogger().severe("Error fetching latest order: " + e.getMessage());
+        }
+        return -1;
+    }
+
 }

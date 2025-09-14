@@ -38,17 +38,23 @@ public class QueueManager {
         }
 
         Customer firstPerson = waitingCustomers.peek();
-        var someTable = tableDao.getAvailableTable();
+        var suitableTable = tableDao.getAvailableTable(firstPerson.getRequiredSeats()); // 🔹 use seats
 
-        if (someTable != null && firstPerson != null) {
-            boolean booked = tableDao.assignTable(someTable.getTableId());
-            boolean linked = customerDao.assignTableToCustomer(firstPerson.getCustomerId(), someTable.getTableId());
+        if (suitableTable != null && firstPerson != null) {
+            boolean booked = tableDao.assignTable(suitableTable.getTableId());
+            boolean linked = customerDao.assignTableToCustomer(firstPerson.getCustomerId(), suitableTable.getTableId());
 
             if (booked && linked) {
                 waitingCustomers.poll();
-                firstPerson.setTableId(someTable.getTableId());
-                LoggerUtil.grabLogger().info("auto assigned table " + someTable.getTableId() + " to " + firstPerson.getName() + " from queue");
+                firstPerson.setTableId(suitableTable.getTableId());
+                LoggerUtil.grabLogger().info(
+                        "auto assigned table " + suitableTable.getTableId() +
+                                " (capacity " + suitableTable.getCapacity() + ")" +
+                                " to " + firstPerson.getName() +
+                                " from queue (needed " + firstPerson.getRequiredSeats() + " seats)"
+                );
             }
         }
     }
+
 }

@@ -7,17 +7,17 @@ import java.io.InputStream;
 import java.io.IOException;
 
 /**
- * This class is like the key holder of db connection.
- * It reads from properties file and prepare a connection when called.
- * It is not perfect but does the job in a simple way.
+ * database connection.
+ * It reads from properties file and prepare and returns a connection.
  */
 public class DatabaseConnection {
+    private static DatabaseConnection instance;
     private static String dbUrl;
     private static String dbUsername;
     private static String dbPassword;
     private static String dbDriver;
 
-    static {
+    private DatabaseConnection() {
         try (InputStream input = DatabaseConnection.class.getClassLoader()
                 .getResourceAsStream("application.properties")) {
             Properties properties = new Properties();
@@ -30,8 +30,15 @@ public class DatabaseConnection {
 
             Class.forName(dbDriver);
         } catch (IOException | ClassNotFoundException exception) {
-            exception.printStackTrace();
+            throw new RuntimeException(exception);
         }
+    }
+
+    public static synchronized DatabaseConnection getInstance() {
+        if (instance == null) {
+            instance = new DatabaseConnection();
+        }
+        return instance;
     }
 
     public static Connection fetchConnection() {
@@ -42,3 +49,4 @@ public class DatabaseConnection {
         }
     }
 }
+

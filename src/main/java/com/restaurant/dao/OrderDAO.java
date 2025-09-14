@@ -2,7 +2,7 @@ package com.restaurant.dao;
 
 import com.restaurant.config.DatabaseConnection;
 import com.restaurant.model.Order;
-import com.restaurant.service.interfaces.IOrderService;
+import com.restaurant.service.interfaces.OrderServiceInterface;
 import com.restaurant.util.LoggerUtil;
 
 import java.sql.*;
@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * this dao is for orders, one order belongs to one customer, one table and a waiter
  * we can create new order, get orders, and change status.
  */
-public class OrderDAO implements IOrderService {
+public class OrderDAO implements OrderServiceInterface {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     @Override

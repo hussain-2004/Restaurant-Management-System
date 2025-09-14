@@ -7,6 +7,7 @@ public class Customer extends AbstractUser {
     private int customerId;
     private Integer tableId;
     private boolean checkedIn;
+    private int requiredSeats;
 
     public Customer(int customerId, int userId, String name) {
         super(userId, name);
@@ -32,4 +33,13 @@ public class Customer extends AbstractUser {
     public void setCheckedIn(boolean checkedIn) {
         this.checkedIn = checkedIn;
     }
+
+    public int getRequiredSeats() {
+        return requiredSeats;
+    }
+
+    public void setRequiredSeats(int requiredSeats) {
+        this.requiredSeats = requiredSeats;
+    }
+
 }

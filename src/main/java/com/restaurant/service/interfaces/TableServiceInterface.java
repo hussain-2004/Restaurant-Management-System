@@ -4,8 +4,9 @@ import com.restaurant.model.Table;
 
 import java.util.List;
 
-public interface ITableService {
-    Table getAvailableTable();
+public interface TableServiceInterface {
+
+    Table getAvailableTable(int requiredSeats);
 
     boolean assignTable(int tableId);
 

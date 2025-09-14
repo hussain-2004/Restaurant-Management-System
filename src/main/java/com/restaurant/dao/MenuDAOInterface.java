@@ -2,7 +2,7 @@ package com.restaurant.dao;
 
 import com.restaurant.config.DatabaseConnection;
 import com.restaurant.model.MenuItem;
-import com.restaurant.service.interfaces.IMenuService;
+import com.restaurant.service.interfaces.MenuServiceInterface;
 import com.restaurant.util.LoggerUtil;
 
 import java.sql.*;
@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * dao for menu items like pizza, coke or biryani,
  * it can read and also allow admin to update things.
  */
-public class MenuDAO implements IMenuService {
+public class MenuDAOInterface implements MenuServiceInterface {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     @Override

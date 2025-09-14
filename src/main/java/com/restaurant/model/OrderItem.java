@@ -9,6 +9,8 @@ public class OrderItem {
     private int menuId;
     private int quantity;
     private String status;
+    private String itemName;
+    private double price;
 
     public OrderItem(int itemId, int orderId, int menuId, int quantity, String status) {
         this.itemId = itemId;
@@ -36,5 +38,21 @@ public class OrderItem {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getItemName() {  // 🔹 getter for itemName
+        return itemName;
+    }
+
+    public void setItemName(String itemName) {  // 🔹 setter for itemName
+        this.itemName = itemName;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
     }
 }

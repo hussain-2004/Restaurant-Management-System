@@ -5,6 +5,7 @@ import com.restaurant.dao.*;
 import com.restaurant.exceptions.BookingException;
 import com.restaurant.exceptions.OrderException;
 import com.restaurant.model.Customer;
+import com.restaurant.model.OrderItem;
 import com.restaurant.util.LoggerUtil;
 import com.restaurant.util.QueueManager;
 import com.restaurant.util.TableMonitorThread;
@@ -12,6 +13,9 @@ import com.restaurant.util.TableMonitorThread;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -26,13 +30,13 @@ public class CustomerService {
     private final OrderItemDAO orderItemDao = new OrderItemDAO();
     private final BillDAO billDao = new BillDAO();
 
-    public String bookTable(Customer customer) throws BookingException {
+    public String bookTable(Customer customer, int requiredSeats) throws BookingException {
         if (customer.getTableId() != null) {
             logger.warning("customer " + customer.getName() + " tried double booking");
             throw new BookingException("You already have a table reserved.");
         }
 
-        var freeTable = tableDao.getAvailableTable();
+        var freeTable = tableDao.getAvailableTable(requiredSeats); // 🔹 pass seats
         if (freeTable == null) {
             QueueManager.getInstance().putCustomerInQueue(customer);
             return "Sorry no free tables now, but you are placed in waiting line.";
@@ -48,11 +52,12 @@ public class CustomerService {
             TableMonitorThread monitor = new TableMonitorThread(customer, freeTable.getTableId());
             monitor.start();
 
-            return "Table " + freeTable.getTableId() + " booked successfully. Please checkin soon.";
+            return "Table " + freeTable.getTableId() + " booked successfully for " + requiredSeats + " people. Please check in soon.";
         } else {
             throw new BookingException("Booking failed due to internal problem.");
         }
     }
+
 
     public String checkIn(Customer customer) throws BookingException {
         if (customer.getTableId() == null) {
@@ -86,9 +91,17 @@ public class CustomerService {
         return true;
     }
 
+
     public int generateBill(int orderId, double totalAmount) {
         return billDao.generateBill(orderId, totalAmount);
     }
+
+    // 🔹 New method for combined bill
+    public int generateCombinedBill(Customer customer) {
+        return billDao.generateCombinedBill(customer.getCustomerId(), customer.getTableId());
+    }
+
+
 
     public int createOrder(Customer customer) throws OrderException {
         if (customer.getTableId() == null) {
@@ -159,6 +172,62 @@ public class CustomerService {
         return total;
     }
 
+    public boolean registerCustomer(String name, String username, String password) {
+        String insertUser = "INSERT INTO users (username, password, role) VALUES (?, ?, 'CUSTOMER') RETURNING user_id";
+        String insertCustomer = "INSERT INTO customers (user_id, name) VALUES (?, ?)";
+
+        try (Connection conn = DatabaseConnection.fetchConnection();
+             PreparedStatement stmtUser = conn.prepareStatement(insertUser);
+        ) {
+            stmtUser.setString(1, username);
+            stmtUser.setString(2, password);
+            ResultSet rs = stmtUser.executeQuery();
+            if (rs.next()) {
+                int userId = rs.getInt("user_id");
+
+                try (PreparedStatement stmtCustomer = conn.prepareStatement(insertCustomer)) {
+                    stmtCustomer.setInt(1, userId);
+                    stmtCustomer.setString(2, name);
+                    stmtCustomer.executeUpdate();
+                }
+                return true;
+            }
+        } catch (SQLException e) {
+            LoggerUtil.grabLogger().severe("Error registering customer: " + e.getMessage());
+            return false;
+        }
+        return false;
+    }
+
+    public List<OrderItem> getAllOrderItemsForCustomer(int customerId, int tableId) {
+        List<OrderItem> result = new ArrayList<>();
+        String sql = "SELECT oi.item_id, oi.order_id, oi.menu_id, m.item_name, m.price, oi.quantity, oi.status " +
+                "FROM orders o " +
+                "JOIN order_items oi ON o.order_id = oi.order_id " +
+                "JOIN menu m ON oi.menu_id = m.menu_id " +
+                "WHERE o.customer_id = ? AND o.table_id = ?";
+        try (Connection conn = DatabaseConnection.fetchConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, customerId);
+            stmt.setInt(2, tableId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                OrderItem item = new OrderItem(
+                        rs.getInt("item_id"),
+                        rs.getInt("order_id"),
+                        rs.getInt("menu_id"),
+                        rs.getInt("quantity"),
+                        rs.getString("status")
+                );
+                item.setItemName(rs.getString("item_name"));
+                item.setPrice(rs.getDouble("price")); // add price in OrderItem model
+                result.add(item);
+            }
+        } catch (SQLException e) {
+            LoggerUtil.grabLogger().severe("Error fetching order items for bill: " + e.getMessage());
+        }
+        return result;
+    }
 
 
 }

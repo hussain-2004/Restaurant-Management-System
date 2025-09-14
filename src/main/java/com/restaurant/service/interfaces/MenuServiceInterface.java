@@ -4,7 +4,7 @@ import com.restaurant.model.MenuItem;
 
 import java.util.List;
 
-public interface IMenuService {
+public interface MenuServiceInterface {
     List<MenuItem> getAllMenuItems();
 
     boolean addMenuItem(String name, double price);

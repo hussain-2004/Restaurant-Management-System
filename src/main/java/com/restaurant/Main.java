@@ -80,11 +80,13 @@ public class Main {
             int customerChoice = inputScanner.nextInt();
             switch (customerChoice) {
                 case 1 -> {
+                    System.out.print("How many people will be dining with you? ");
+                    int requiredSeats = inputScanner.nextInt();
                     try {
-                        String result = customerService.bookTable(customer);
-                        System.out.println(result);
+                        String message = customerService.bookTable(customer, requiredSeats);
+                        System.out.println(message);
                     } catch (BookingException e) {
-                        System.out.println(e.getMessage());
+                        System.out.println("⚠️ " + e.getMessage());
                     }
                 }
                 case 2 -> {
@@ -123,17 +125,34 @@ public class Main {
                 }
 
                 case 4 -> {
-                    int orderId = customerService.getLatestOrderForCustomer(customer.getCustomerId());
-                    double total = customerService.calculateOrderTotal(orderId);
-                    int billId = customerService.generateBill(orderId, total);
+                    int billId = customerService.generateCombinedBill(customer);
+
                     if (billId > 0) {
-                        System.out.println("✅ Bill created successfully for your last order (Order ID: "
-                                + orderId + ") with Bill ID: " + billId + " and total ₹" + total);
+                        System.out.println("✅ Combined Bill generated successfully! Bill ID: " + billId);
+                        System.out.println("Here is your detailed bill:");
+
+                        // Fetch all order items for this customer+table
+                        var items = customerService.getAllOrderItemsForCustomer(customer.getCustomerId(), customer.getTableId());
+                        double grandTotal = 0.0;
+
+                        for (var item : items) {
+                            double lineTotal = item.getQuantity() * item.getPrice(); // needs price from JOIN
+                            grandTotal += lineTotal;
+                            System.out.println(" - " + item.getItemName() +
+                                    " x " + item.getQuantity() +
+                                    " @ ₹" + item.getPrice() +
+                                    " = ₹" + lineTotal);
+                        }
+
+                        System.out.println("----------------------------------");
+                        System.out.println("Total Payable: ₹" + grandTotal);
+                        System.out.println("----------------------------------");
+
                     } else {
                         System.out.println("❌ Could not generate bill.");
                     }
-
                 }
+
                 case 5 -> {
                     System.out.println("Logging out from customer account...");
                     stayInMenu = false;
@@ -151,8 +170,17 @@ public class Main {
         String username = inputScanner.next();
         System.out.print("Choose password: ");
         String password = inputScanner.next();
-        System.out.println("Welcome " + name + "! Your account is created. Please login now with your username and password.");
+
+        CustomerService customerService = new CustomerService();
+        boolean success = customerService.registerCustomer(name, username, password);
+
+        if (success) {
+            System.out.println("✅ Welcome " + name + "! Your account is created. Please login now with your username and password.");
+        } else {
+            System.out.println("❌ Sorry, something went wrong. Your account could not be created.");
+        }
     }
+
 
     private static void handleStaffLogin() {
         System.out.println("\n--- Staff or Admin Login ---");
@@ -256,7 +284,7 @@ public class Main {
                             } else {
                                 for (var item : items) {
                                     System.out.println("    Item ID: " + item.getItemId() +
-                                            " | Menu ID: " + item.getMenuId() +
+                                            " | " + item.getItemName() +
                                             " | Qty: " + item.getQuantity() +
                                             " | Status: " + item.getStatus());
                                 }

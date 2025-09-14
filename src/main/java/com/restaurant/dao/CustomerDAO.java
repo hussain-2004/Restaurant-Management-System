@@ -2,7 +2,6 @@ package com.restaurant.dao;
 
 import com.restaurant.config.DatabaseConnection;
 import com.restaurant.model.Customer;
-import com.restaurant.service.interfaces.UserServices;
 import com.restaurant.util.LoggerUtil;
 
 import java.sql.*;
