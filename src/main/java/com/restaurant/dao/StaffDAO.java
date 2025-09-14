@@ -12,34 +12,34 @@ import java.sql.*;
 import java.util.logging.Logger;
 
 /**
- * staff dao fetches staff user details and map to their role classes.
+ * Retrieves staff user details and maps them to their corresponding role classes.
  */
 public class StaffDAO {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     public AbstractStaff getStaffByUserId(int userId) {
-        String staffSelectionQuery = "SELECT * FROM staff WHERE user_id = ?";
-        try (Connection databaseConnectionForStaffOperations = DatabaseConnection.fetchConnection();
-             PreparedStatement staffQueryPreparedStatement = databaseConnectionForStaffOperations.prepareStatement(staffSelectionQuery)) {
+        String selectQuery = "SELECT * FROM staff WHERE user_id = ?";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(selectQuery)) {
 
-            staffQueryPreparedStatement.setInt(1, userId);
-            ResultSet staffDataResultSet = staffQueryPreparedStatement.executeQuery();
+            statement.setInt(1, userId);
+            ResultSet resultSet = statement.executeQuery();
 
-            if (staffDataResultSet.next()) {
-                int staffIdentifier = staffDataResultSet.getInt("staff_id");
-                String staffMemberName = staffDataResultSet.getString("name");
-                String staffRoleType = staffDataResultSet.getString("role");
+            if (resultSet.next()) {
+                int staffId = resultSet.getInt("staff_id");
+                String name = resultSet.getString("name");
+                String role = resultSet.getString("role");
 
-                return switch (staffRoleType.toUpperCase()) {
-                    case "WAITER" -> new Waiter(staffIdentifier, userId, staffMemberName);
-                    case "CHEF" -> new Chef(staffIdentifier, userId, staffMemberName);
-                    case "MANAGER" -> new Manager(staffIdentifier, userId, staffMemberName);
-                    case "ADMIN" -> new Admin(staffIdentifier, userId, staffMemberName);
+                return switch (role.toUpperCase()) {
+                    case "WAITER" -> new Waiter(staffId, userId, name);
+                    case "CHEF" -> new Chef(staffId, userId, name);
+                    case "MANAGER" -> new Manager(staffId, userId, name);
+                    case "ADMIN" -> new Admin(staffId, userId, name);
                     default -> null;
                 };
             }
-        } catch (SQLException staffRetrievalException) {
-            logger.warning("cannot fetch staff details for user " + userId + ": " + staffRetrievalException.getMessage());
+        } catch (SQLException exception) {
+            logger.warning("cannot fetch staff details for user " + userId + ": " + exception.getMessage());
         }
         return null;
     }

@@ -11,93 +11,92 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * this dao is for orders, one order belongs to one customer, one table and a waiter
- * we can create new order, get orders, and change status.
+ * Manages order operations including creation, retrieval, and status updates for restaurant orders.
  */
 public class OrderDAO implements OrderServiceInterface {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     @Override
     public int createOrder(int customerId, int tableId, int waiterId) {
-        String insertNewOrderQuery = "INSERT INTO orders (customer_id, table_id, waiter_id, status) VALUES (?, ?, ?, 'PENDING') RETURNING order_id";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement insertOrderStatement = databaseConnection.prepareStatement(insertNewOrderQuery)) {
+        String insertQuery = "INSERT INTO orders (customer_id, table_id, waiter_id, status) VALUES (?, ?, ?, 'PENDING') RETURNING order_id";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(insertQuery)) {
 
-            insertOrderStatement.setInt(1, customerId);
-            insertOrderStatement.setInt(2, tableId);
-            insertOrderStatement.setInt(3, waiterId);
-            ResultSet newOrderIdResultSet = insertOrderStatement.executeQuery();
+            statement.setInt(1, customerId);
+            statement.setInt(2, tableId);
+            statement.setInt(3, waiterId);
+            ResultSet resultSet = statement.executeQuery();
 
-            if (newOrderIdResultSet.next()) {
-                int generatedOrderId = newOrderIdResultSet.getInt("order_id");
-                logger.info("new order " + generatedOrderId + " created for customer " + customerId);
-                return generatedOrderId;
+            if (resultSet.next()) {
+                int orderId = resultSet.getInt("order_id");
+                logger.info("new order " + orderId + " created for customer " + customerId);
+                return orderId;
             }
-        } catch (SQLException sqlException) {
-            logger.severe("error creating order for customer " + customerId + ": " + sqlException.getMessage());
+        } catch (SQLException exception) {
+            logger.severe("error creating order for customer " + customerId + ": " + exception.getMessage());
         }
         return -1;
     }
 
     @Override
     public List<Order> getOrdersByCustomer(int customerId) {
-        List<Order> customerOrdersList = new ArrayList<>();
-        String selectOrdersByCustomerQuery = "SELECT * FROM orders WHERE customer_id = ? ORDER BY order_time DESC";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement selectCustomerOrdersStatement = databaseConnection.prepareStatement(selectOrdersByCustomerQuery)) {
+        List<Order> orders = new ArrayList<>();
+        String selectQuery = "SELECT * FROM orders WHERE customer_id = ? ORDER BY order_time DESC";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(selectQuery)) {
 
-            selectCustomerOrdersStatement.setInt(1, customerId);
-            ResultSet customerOrdersResultSet = selectCustomerOrdersStatement.executeQuery();
+            statement.setInt(1, customerId);
+            ResultSet resultSet = statement.executeQuery();
 
-            while (customerOrdersResultSet.next()) {
-                customerOrdersList.add(new Order(customerOrdersResultSet.getInt("order_id"),
-                        customerOrdersResultSet.getInt("customer_id"),
-                        customerOrdersResultSet.getInt("table_id"),
-                        customerOrdersResultSet.getInt("waiter_id"),
-                        customerOrdersResultSet.getString("status"),
-                        customerOrdersResultSet.getString("order_time")));
+            while (resultSet.next()) {
+                orders.add(new Order(resultSet.getInt("order_id"),
+                        resultSet.getInt("customer_id"),
+                        resultSet.getInt("table_id"),
+                        resultSet.getInt("waiter_id"),
+                        resultSet.getString("status"),
+                        resultSet.getString("order_time")));
             }
-        } catch (SQLException sqlException) {
-            logger.warning("error fetching orders for customer " + customerId + ": " + sqlException.getMessage());
+        } catch (SQLException exception) {
+            logger.warning("error fetching orders for customer " + customerId + ": " + exception.getMessage());
         }
-        return customerOrdersList;
+        return orders;
     }
 
     @Override
     public boolean updateOrderStatus(int orderId, String status) {
-        String updateOrderStatusQuery = "UPDATE orders SET status = ? WHERE order_id = ?";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement updateOrderStatusStatement = databaseConnection.prepareStatement(updateOrderStatusQuery)) {
+        String updateQuery = "UPDATE orders SET status = ? WHERE order_id = ?";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(updateQuery)) {
 
-            updateOrderStatusStatement.setString(1, status);
-            updateOrderStatusStatement.setInt(2, orderId);
-            return updateOrderStatusStatement.executeUpdate() > 0;
-        } catch (SQLException sqlException) {
-            logger.warning("error updating status of order " + orderId + ": " + sqlException.getMessage());
+            statement.setString(1, status);
+            statement.setInt(2, orderId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException exception) {
+            logger.warning("error updating status of order " + orderId + ": " + exception.getMessage());
             return false;
         }
     }
 
     public List<Order> getOrdersByStatus(String status) {
-        List<Order> ordersWithSpecificStatusList = new ArrayList<>();
-        String selectOrdersByStatusQuery = "SELECT * FROM orders WHERE status = ? ORDER BY order_time";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement selectOrdersByStatusStatement = databaseConnection.prepareStatement(selectOrdersByStatusQuery)) {
+        List<Order> orders = new ArrayList<>();
+        String selectQuery = "SELECT * FROM orders WHERE status = ? ORDER BY order_time";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(selectQuery)) {
 
-            selectOrdersByStatusStatement.setString(1, status);
-            ResultSet ordersWithStatusResultSet = selectOrdersByStatusStatement.executeQuery();
+            statement.setString(1, status);
+            ResultSet resultSet = statement.executeQuery();
 
-            while (ordersWithStatusResultSet.next()) {
-                ordersWithSpecificStatusList.add(new Order(ordersWithStatusResultSet.getInt("order_id"),
-                        ordersWithStatusResultSet.getInt("customer_id"),
-                        ordersWithStatusResultSet.getInt("table_id"),
-                        ordersWithStatusResultSet.getInt("waiter_id"),
-                        ordersWithStatusResultSet.getString("status"),
-                        ordersWithStatusResultSet.getString("order_time")));
+            while (resultSet.next()) {
+                orders.add(new Order(resultSet.getInt("order_id"),
+                        resultSet.getInt("customer_id"),
+                        resultSet.getInt("table_id"),
+                        resultSet.getInt("waiter_id"),
+                        resultSet.getString("status"),
+                        resultSet.getString("order_time")));
             }
-        } catch (SQLException sqlException) {
-            logger.warning("error fetching orders by status " + status + ": " + sqlException.getMessage());
+        } catch (SQLException exception) {
+            logger.warning("error fetching orders by status " + status + ": " + exception.getMessage());
         }
-        return ordersWithSpecificStatusList;
+        return orders;
     }
 }

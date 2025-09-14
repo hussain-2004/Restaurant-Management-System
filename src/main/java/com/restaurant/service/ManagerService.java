@@ -15,69 +15,68 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * manager service is for the boss guy in restaurant,
- * he can see orders, make bills, take payments and free tables.
+ * Handles manager operations including order viewing, billing, payments, and table management.
  */
 public class ManagerService {
     private static final Logger logger = LoggerUtil.grabLogger();
 
-    private final OrderDAO orderDataAccessObject = new OrderDAO();
-    private final BillDAO billDataAccessObject = new BillDAO();
-    private final PaymentDAO paymentDataAccessObject = new PaymentDAO();
-    private final TableDAO tableDataAccessObject = new TableDAO();
-    private final CustomerDAO customerDataAccessObject = new CustomerDAO();
+    private final OrderDAO orderDao = new OrderDAO();
+    private final BillDAO billDao = new BillDAO();
+    private final PaymentDAO paymentDao = new PaymentDAO();
+    private final TableDAO tableDao = new TableDAO();
+    private final CustomerDAO customerDao = new CustomerDAO();
 
     public List<Order> viewCompletedOrders() {
-        List<Order> readyOrdersList = orderDataAccessObject.getOrdersByStatus("READY");
-        return readyOrdersList;
+        List<Order> orders = orderDao.getOrdersByStatus("READY");
+        return orders;
     }
 
     public List<OrderItem> getItemsForOrder(int orderId) {
-        OrderItemDAO orderItemDataAccessLayer = new OrderItemDAO();
-        List<OrderItem> orderItemsForSpecificOrder = orderItemDataAccessLayer.getItemsByOrder(orderId);
-        return orderItemsForSpecificOrder;
+        OrderItemDAO orderItemDao = new OrderItemDAO();
+        List<OrderItem> orderItems = orderItemDao.getItemsByOrder(orderId);
+        return orderItems;
     }
 
     public int generateBill(int orderId, double total) {
-        int generatedBillIdentifier = billDataAccessObject.generateBill(orderId, total);
-        return generatedBillIdentifier;
+        int billId = billDao.generateBill(orderId, total);
+        return billId;
     }
 
     public boolean recordPayment(int billId, String method, double amount) {
-        String paymentInsertionQuery = "INSERT INTO payments (bill_id, payment_method, amount) VALUES (?, ?, ?)";
-        try (Connection databaseConnectionForPayment = DatabaseConnection.fetchConnection();
-             PreparedStatement paymentInsertionPreparedStatement = databaseConnectionForPayment.prepareStatement(paymentInsertionQuery)) {
+        String insertQuery = "INSERT INTO payments (bill_id, payment_method, amount) VALUES (?, ?, ?)";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(insertQuery)) {
 
-            paymentInsertionPreparedStatement.setInt(1, billId);
-            paymentInsertionPreparedStatement.setString(2, method);
-            paymentInsertionPreparedStatement.setDouble(3, amount);
-            int affectedRowsCount = paymentInsertionPreparedStatement.executeUpdate();
+            statement.setInt(1, billId);
+            statement.setString(2, method);
+            statement.setDouble(3, amount);
+            int rowsAffected = statement.executeUpdate();
 
-            if (affectedRowsCount > 0) {
-                int associatedTableIdentifier = getTableIdFromBill(billId);
-                if (associatedTableIdentifier != -1) {
-                    TableDAO tableDataAccessForFreeing = new TableDAO();
-                    tableDataAccessForFreeing.freeTable(associatedTableIdentifier);
-                    LoggerUtil.grabLogger().info("bill " + billId + " paid and table " + associatedTableIdentifier + " freed");
+            if (rowsAffected > 0) {
+                int tableId = getTableIdFromBill(billId);
+                if (tableId != -1) {
+                    TableDAO tableService = new TableDAO();
+                    tableService.freeTable(tableId);
+                    LoggerUtil.grabLogger().info("bill " + billId + " paid and table " + tableId + " freed");
                 }
                 return true;
             }
-        } catch (Exception paymentRecordingException) {
-            LoggerUtil.grabLogger().severe("Error recording payment for bill " + billId + ": " + paymentRecordingException.getMessage());
+        } catch (Exception exception) {
+            LoggerUtil.grabLogger().severe("Error recording payment for bill " + billId + ": " + exception.getMessage());
         }
         return false;
     }
 
     public List<Table> viewVacantTables() {
-        List<Table> availableTablesList = tableDataAccessObject.getVacantTables();
-        return availableTablesList;
+        List<Table> tables = tableDao.getVacantTables();
+        return tables;
     }
 
     public boolean freeTableManually(int tableId) {
-        boolean tableFreedResult = tableDataAccessObject.freeTable(tableId);
-        boolean customerClearedResult = customerDataAccessObject.clearCustomerByTableId(tableId);
+        boolean tableFreed = tableDao.freeTable(tableId);
+        boolean customerCleared = customerDao.clearCustomerByTableId(tableId);
 
-        if (tableFreedResult && customerClearedResult) {
+        if (tableFreed && customerCleared) {
             QueueManager.getInstance().tryAssignFreeTable();
             logger.warning("table " + tableId + " was freed manually by manager");
             return true;
@@ -86,20 +85,20 @@ public class ManagerService {
     }
 
     private int getTableIdFromBill(int billId) {
-        String tableIdRetrievalQuery = "SELECT o.table_id " +
+        String selectQuery = "SELECT o.table_id " +
                 "FROM bills b " +
                 "JOIN orders o ON b.order_id = o.order_id " +
                 "WHERE b.bill_id = ?";
-        try (Connection databaseConnectionForTableRetrieval = DatabaseConnection.fetchConnection();
-             PreparedStatement tableIdRetrievalPreparedStatement = databaseConnectionForTableRetrieval.prepareStatement(tableIdRetrievalQuery)) {
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(selectQuery)) {
 
-            tableIdRetrievalPreparedStatement.setInt(1, billId);
-            ResultSet tableIdResultSet = tableIdRetrievalPreparedStatement.executeQuery();
-            if (tableIdResultSet.next()) {
-                return tableIdResultSet.getInt("table_id");
+            statement.setInt(1, billId);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getInt("table_id");
             }
-        } catch (Exception tableIdRetrievalException) {
-            LoggerUtil.grabLogger().severe("Error fetching tableId from bill " + billId + ": " + tableIdRetrievalException.getMessage());
+        } catch (Exception exception) {
+            LoggerUtil.grabLogger().severe("Error fetching tableId from bill " + billId + ": " + exception.getMessage());
         }
         return -1;
     }

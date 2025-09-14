@@ -79,3 +79,37 @@ Sept 14, 2025 5:07:08 PM com.restaurant.service.WaiterService markOrderAsServed
 INFO: order 22 marked served by waiter
 Sept 14, 2025 5:07:27 PM com.restaurant.service.WaiterService markOrderAsServed
 INFO: order 23 marked served by waiter
+Sept 14, 2025 9:34:02 PM com.restaurant.service.CustomerService bookTable
+INFO: table 3 booked for customer subbu1
+Sept 14, 2025 9:35:34 PM com.restaurant.dao.OrderDAO createOrder
+INFO: new order 24 created for customer 15
+Sept 14, 2025 9:35:45 PM com.restaurant.dao.OrderDAO createOrder
+INFO: new order 25 created for customer 15
+Sept 14, 2025 9:39:10 PM com.restaurant.service.ChefService markOrderItemCompleted
+INFO: order item 9 marked completed by chef
+Sept 14, 2025 9:39:19 PM com.restaurant.service.ChefService markOrderItemCompleted
+INFO: order item 10 marked completed by chef
+Sept 14, 2025 9:40:09 PM com.restaurant.service.WaiterService markOrderAsServed
+INFO: order 24 marked served by waiter
+Sept 14, 2025 9:40:14 PM com.restaurant.service.WaiterService markOrderAsServed
+INFO: order 25 marked served by waiter
+Sept 14, 2025 9:42:15 PM com.restaurant.service.ManagerService recordPayment
+INFO: bill 20 paid and table 3 freed
+Sept 14, 2025 10:24:01 PM com.restaurant.service.CustomerService bookTable
+INFO: table 4 booked for customer David Customer
+Sept 14, 2025 10:43:20 PM com.restaurant.service.CustomerService bookTable
+WARNING: customer David Customer tried double booking
+Sept 14, 2025 10:47:25 PM com.restaurant.service.CustomerService bookTable
+INFO: table 1 booked for customer hussain
+Sept 14, 2025 10:48:25 PM com.restaurant.util.TableMonitorThread run
+WARNING: customer hussain not checked in. table 1 is freed
+Sept 14, 2025 10:49:51 PM com.restaurant.service.CustomerService bookTable
+WARNING: customer hussain tried double booking
+Sept 14, 2025 10:53:57 PM com.restaurant.service.CustomerService bookTable
+WARNING: customer hussain tried double booking
+Sept 14, 2025 10:54:11 PM com.restaurant.service.CustomerService bookTable
+WARNING: customer David Customer tried double booking
+Sept 14, 2025 10:54:46 PM com.restaurant.service.CustomerService bookTable
+INFO: table 2 booked for customer abc1
+Sept 14, 2025 10:55:46 PM com.restaurant.util.TableMonitorThread run
+WARNING: customer abc1 not checked in. table 2 is freed

@@ -7,22 +7,22 @@ import java.sql.*;
 import java.util.logging.Logger;
 
 /**
- * payment dao record payments of customers against bills.
+ * Records and manages customer payment transactions against bills.
  */
 public class PaymentDAO {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     public boolean recordPayment(int billId, String method, double amount) {
-        String paymentInsertionQuery = "INSERT INTO payments (bill_id, payment_method, amount) VALUES (?, ?, ?)";
-        try (Connection databaseConnectionForPayments = DatabaseConnection.fetchConnection();
-             PreparedStatement insertPaymentPreparedStatement = databaseConnectionForPayments.prepareStatement(paymentInsertionQuery)) {
+        String insertQuery = "INSERT INTO payments (bill_id, payment_method, amount) VALUES (?, ?, ?)";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(insertQuery)) {
 
-            insertPaymentPreparedStatement.setInt(1, billId);
-            insertPaymentPreparedStatement.setString(2, method);
-            insertPaymentPreparedStatement.setDouble(3, amount);
-            return insertPaymentPreparedStatement.executeUpdate() > 0;
-        } catch (SQLException paymentProcessingException) {
-            logger.warning("error occured recording payment for bill " + billId + ": " + paymentProcessingException.getMessage());
+            statement.setInt(1, billId);
+            statement.setString(2, method);
+            statement.setDouble(3, amount);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException exception) {
+            logger.warning("error occured recording payment for bill " + billId + ": " + exception.getMessage());
             return false;
         }
     }

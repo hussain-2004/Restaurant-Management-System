@@ -20,7 +20,7 @@ public class TableMonitorThread extends Thread {
     @Override
     public void run() {
         try {
-            Thread.sleep(20 * 60 * 1000); // 20 min sleep
+            Thread.sleep(1 * 60 * 1000); // 20 min sleep
             if (!customer.isCheckedIn()) {
                 new TableDAO().freeTable(tableId);
                 new CustomerDAO().clearTableForCustomer(customer.getCustomerId());

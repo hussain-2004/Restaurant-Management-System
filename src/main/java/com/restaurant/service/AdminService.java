@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * admin service is super control, can handle menu and staff list and sales reports.
+ * admin service is super control.
  */
 public class AdminService {
     private static final Logger logger = LoggerUtil.grabLogger();

@@ -8,116 +8,116 @@ import java.sql.*;
 import java.util.logging.Logger;
 
 /**
- * bill dao makes bill for a order and track if paid or not.
+ * Manages bill generation and payment tracking for restaurant orders.
  */
 public class BillDAO {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     public int generateBill(int orderId, double totalAmount) {
-        String insertBillQuery = "INSERT INTO bills (order_id, total_amount, is_paid) VALUES (?, ?, FALSE) RETURNING bill_id";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement insertBillStatement = databaseConnection.prepareStatement(insertBillQuery)) {
+        String billQuery = "INSERT INTO bills (order_id, total_amount, is_paid) VALUES (?, ?, FALSE) RETURNING bill_id";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(billQuery)) {
 
-            insertBillStatement.setInt(1, orderId);
-            insertBillStatement.setDouble(2, totalAmount);
-            ResultSet billIdResultSet = insertBillStatement.executeQuery();
+            statement.setInt(1, orderId);
+            statement.setDouble(2, totalAmount);
+            ResultSet resultSet = statement.executeQuery();
 
-            if (billIdResultSet.next()) {
-                int generatedBillId = billIdResultSet.getInt("bill_id");
-                logger.info("bill " + generatedBillId + " created for order " + orderId);
-                return generatedBillId;
+            if (resultSet.next()) {
+                int billId = resultSet.getInt("bill_id");
+                logger.info("bill " + billId + " created for order " + orderId);
+                return billId;
             }
-        } catch (SQLException sqlException) {
-            logger.severe("cannot generate bill for order " + orderId + ": " + sqlException.getMessage());
+        } catch (SQLException exception) {
+            logger.severe("cannot generate bill for order " + orderId + ": " + exception.getMessage());
         }
         return -1;
     }
 
     public boolean markBillAsPaid(int billId) {
-        String updateBillPaymentStatusQuery = "UPDATE bills SET is_paid = TRUE WHERE bill_id = ?";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement updateBillPaymentStatement = databaseConnection.prepareStatement(updateBillPaymentStatusQuery)) {
+        String updateQuery = "UPDATE bills SET is_paid = TRUE WHERE bill_id = ?";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(updateQuery)) {
 
-            updateBillPaymentStatement.setInt(1, billId);
-            return updateBillPaymentStatement.executeUpdate() > 0;
-        } catch (SQLException sqlException) {
-            logger.warning("error marking bill " + billId + " as paid: " + sqlException.getMessage());
+            statement.setInt(1, billId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException exception) {
+            logger.warning("error marking bill " + billId + " as paid: " + exception.getMessage());
             return false;
         }
     }
 
     public double getBillTotal(int billId) {
-        String selectBillTotalQuery = "SELECT total_amount FROM bills WHERE bill_id = ?";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement selectBillTotalStatement = databaseConnection.prepareStatement(selectBillTotalQuery)) {
+        String selectQuery = "SELECT total_amount FROM bills WHERE bill_id = ?";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(selectQuery)) {
 
-            selectBillTotalStatement.setInt(1, billId);
-            ResultSet billTotalResultSet = selectBillTotalStatement.executeQuery();
+            statement.setInt(1, billId);
+            ResultSet resultSet = statement.executeQuery();
 
-            if (billTotalResultSet.next()) {
-                return billTotalResultSet.getDouble("total_amount");
+            if (resultSet.next()) {
+                return resultSet.getDouble("total_amount");
             }
-        } catch (SQLException sqlException) {
-            logger.warning("error fetching bill total for bill " + billId + ": " + sqlException.getMessage());
+        } catch (SQLException exception) {
+            logger.warning("error fetching bill total for bill " + billId + ": " + exception.getMessage());
         }
         return 0.0;
     }
 
     public int generateCombinedBill(int customerId, int tableId) {
-        String selectOrderItemsWithPricesQuery = "SELECT oi.quantity, m.price " +
+        String itemsQuery = "SELECT oi.quantity, m.price " +
                 "FROM orders o " +
                 "JOIN order_items oi ON o.order_id = oi.order_id " +
                 "JOIN menu m ON oi.menu_id = m.menu_id " +
                 "WHERE o.customer_id = ? AND o.table_id = ?";
 
-        double combinedBillTotalAmount = 0.0;
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement selectOrderItemsStatement = databaseConnection.prepareStatement(selectOrderItemsWithPricesQuery)) {
+        double totalAmount = 0.0;
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(itemsQuery)) {
 
-            selectOrderItemsStatement.setInt(1, customerId);
-            selectOrderItemsStatement.setInt(2, tableId);
-            ResultSet orderItemsWithPricesResultSet = selectOrderItemsStatement.executeQuery();
+            statement.setInt(1, customerId);
+            statement.setInt(2, tableId);
+            ResultSet resultSet = statement.executeQuery();
 
-            while (orderItemsWithPricesResultSet.next()) {
-                int itemQuantity = orderItemsWithPricesResultSet.getInt("quantity");
-                double itemPrice = orderItemsWithPricesResultSet.getDouble("price");
-                combinedBillTotalAmount += itemQuantity * itemPrice;
+            while (resultSet.next()) {
+                int quantity = resultSet.getInt("quantity");
+                double price = resultSet.getDouble("price");
+                totalAmount += quantity * price;
             }
 
-            if (combinedBillTotalAmount > 0) {
-                String insertCombinedBillQuery = "INSERT INTO bills (order_id, total_amount, is_paid) VALUES (?, ?, FALSE)";
-                int latestOrderIdForCustomer = getLatestOrderIdForCustomer(customerId);
+            if (totalAmount > 0) {
+                String insertQuery = "INSERT INTO bills (order_id, total_amount, is_paid) VALUES (?, ?, FALSE)";
+                int orderId = getLatestOrderIdForCustomer(customerId);
 
-                try (PreparedStatement insertCombinedBillStatement = databaseConnection.prepareStatement(insertCombinedBillQuery, Statement.RETURN_GENERATED_KEYS)) {
-                    insertCombinedBillStatement.setInt(1, latestOrderIdForCustomer);
-                    insertCombinedBillStatement.setDouble(2, combinedBillTotalAmount);
-                    insertCombinedBillStatement.executeUpdate();
+                try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
+                    insertStatement.setInt(1, orderId);
+                    insertStatement.setDouble(2, totalAmount);
+                    insertStatement.executeUpdate();
 
-                    ResultSet generatedBillIdKeys = insertCombinedBillStatement.getGeneratedKeys();
-                    if (generatedBillIdKeys.next()) {
-                        return generatedBillIdKeys.getInt(1); // bill_id
+                    ResultSet keys = insertStatement.getGeneratedKeys();
+                    if (keys.next()) {
+                        return keys.getInt(1);
                     }
                 }
             }
-        } catch (SQLException sqlException) {
-            LoggerUtil.grabLogger().severe("Error generating combined bill: " + sqlException.getMessage());
+        } catch (SQLException exception) {
+            LoggerUtil.grabLogger().severe("Error generating combined bill: " + exception.getMessage());
         }
         return -1;
     }
 
     private int getLatestOrderIdForCustomer(int customerId) {
-        String selectLatestOrderQuery = "SELECT order_id FROM orders WHERE customer_id = ? ORDER BY order_id DESC LIMIT 1";
-        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
-             PreparedStatement selectLatestOrderStatement = databaseConnection.prepareStatement(selectLatestOrderQuery)) {
+        String orderQuery = "SELECT order_id FROM orders WHERE customer_id = ? ORDER BY order_id DESC LIMIT 1";
+        try (Connection connection = DatabaseConnection.fetchConnection();
+             PreparedStatement statement = connection.prepareStatement(orderQuery)) {
 
-            selectLatestOrderStatement.setInt(1, customerId);
-            ResultSet latestOrderResultSet = selectLatestOrderStatement.executeQuery();
+            statement.setInt(1, customerId);
+            ResultSet resultSet = statement.executeQuery();
 
-            if (latestOrderResultSet.next()) {
-                return latestOrderResultSet.getInt("order_id");
+            if (resultSet.next()) {
+                return resultSet.getInt("order_id");
             }
-        } catch (Exception generalException) {
-            LoggerUtil.grabLogger().severe("Error fetching latest order: " + generalException.getMessage());
+        } catch (Exception exception) {
+            LoggerUtil.grabLogger().severe("Error fetching latest order: " + exception.getMessage());
         }
         return -1;
     }
