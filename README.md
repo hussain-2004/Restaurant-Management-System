@@ -219,15 +219,3 @@ Restaurant-Management-System/
 * Analytics & reporting dashboard
 
 ---
-
-## 🧑‍💻 Author
-
-**SK Hussain**
-💼 Mini-project for academic evaluation
-🌐 GitHub: [hussain-2004](https://github.com/hussain-2004)
-
----
-
-🔥 *"Running a restaurant digitally should feel as smooth as serving butter naan!"*
-
----
