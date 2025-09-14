@@ -15,26 +15,26 @@ import java.util.logging.Logger;
 public class AdminService {
     private static final Logger logger = LoggerUtil.grabLogger();
 
-    private final MenuDAOInterface menuDao = new MenuDAOInterface();
-    private final StaffDAO staffDao = new StaffDAO();
+    private final MenuDAOInterface menuDataAccessObject = new MenuDAOInterface();
+    private final StaffDAO staffDataAccessObject = new StaffDAO();
 
     public List<MenuItem> seeAllMenuItems() {
-        return menuDao.getAllMenuItems();
+        return menuDataAccessObject.getAllMenuItems();
     }
 
     public boolean addMenuDish(String name, double price) {
-        return menuDao.addMenuItem(name, price);
+        return   menuDataAccessObject.addMenuItem(name, price);
     }
 
     public boolean changeDishPrice(int menuId, double price) {
-        return menuDao.updatePrice(menuId, price);
+        return  menuDataAccessObject.updatePrice(menuId, price);
     }
 
     public boolean deleteDish(int menuId) {
-        return menuDao.deleteMenuItem(menuId);
+        return menuDataAccessObject.deleteMenuItem(menuId);
     }
 
     public AbstractStaff getStaffByUser(int userId) {
-        return staffDao.getStaffByUserId(userId);
+        return staffDataAccessObject.getStaffByUserId(userId);
     }
 }

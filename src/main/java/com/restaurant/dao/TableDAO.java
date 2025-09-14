@@ -18,90 +18,94 @@ public class TableDAO implements TableServiceInterface {
 
     @Override
     public Table getAvailableTable(int requiredSeats) {
-        String sql = "SELECT * FROM tables " +
+        String selectBestFitTableQuery = "SELECT * FROM tables " +
                 "WHERE is_booked = FALSE AND capacity >= ? " +
-                "ORDER BY capacity ASC LIMIT 1";  // pick smallest possible fit
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, requiredSeats);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
+                "ORDER BY capacity ASC LIMIT 1";
+        try (Connection databaseConnectionForTableSearch = DatabaseConnection.fetchConnection();
+             PreparedStatement findAvailableTablePreparedStatement = databaseConnectionForTableSearch.prepareStatement(selectBestFitTableQuery)) {
+
+            findAvailableTablePreparedStatement.setInt(1, requiredSeats);
+            try (ResultSet availableTableResultSet = findAvailableTablePreparedStatement.executeQuery()) {
+                if (availableTableResultSet.next()) {
                     return new Table(
-                            rs.getInt("table_id"),
-                            rs.getInt("capacity"),
-                            rs.getBoolean("is_booked"),
-                            rs.getString("booking_time")
+                            availableTableResultSet.getInt("table_id"),
+                            availableTableResultSet.getInt("capacity"),
+                            availableTableResultSet.getBoolean("is_booked"),
+                            availableTableResultSet.getString("booking_time")
                     );
                 }
             }
-        } catch (SQLException e) {
-            logger.warning("error finding table for " + requiredSeats + " seats: " + e.getMessage());
+        } catch (SQLException tableSearchException) {
+            logger.warning("error occured finding table for " + requiredSeats + " seats: " + tableSearchException.getMessage());
         }
         return null;
     }
 
-
     @Override
     public boolean assignTable(int tableId) {
-        String sql = "UPDATE tables SET is_booked = TRUE, booking_time = NOW() WHERE table_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, tableId);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("error assigning table " + tableId + ": " + e.getMessage());
+        String updateTableBookingStatusQuery = "UPDATE tables SET is_booked = TRUE, booking_time = NOW() WHERE table_id = ?";
+        try (Connection databaseConnectionForTableAssignment = DatabaseConnection.fetchConnection();
+             PreparedStatement assignTablePreparedStatement = databaseConnectionForTableAssignment.prepareStatement(updateTableBookingStatusQuery)) {
+
+            assignTablePreparedStatement.setInt(1, tableId);
+            return assignTablePreparedStatement.executeUpdate() > 0;
+        } catch (SQLException tableAssignmentException) {
+            logger.warning("error occured assigning table " + tableId + ": " + tableAssignmentException.getMessage());
             return false;
         }
     }
 
     @Override
     public boolean freeTable(int tableId) {
-        String sql = "UPDATE tables SET is_booked = FALSE, booking_time = NULL WHERE table_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, tableId);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("error freeing table " + tableId + ": " + e.getMessage());
+        String clearTableBookingQuery = "UPDATE tables SET is_booked = FALSE, booking_time = NULL WHERE table_id = ?";
+        try (Connection databaseConnectionForTableRelease = DatabaseConnection.fetchConnection();
+             PreparedStatement freeTablePreparedStatement = databaseConnectionForTableRelease.prepareStatement(clearTableBookingQuery)) {
+
+            freeTablePreparedStatement.setInt(1, tableId);
+            return freeTablePreparedStatement.executeUpdate() > 0;
+        } catch (SQLException tableReleaseException) {
+            logger.warning("error freeing table " + tableId + ": " + tableReleaseException.getMessage());
             return false;
         }
     }
 
     @Override
     public List<Table> getAllTables() {
-        List<Table> result = new ArrayList<>();
-        String sql = "SELECT * FROM tables ORDER BY table_id";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                result.add(new Table(rs.getInt("table_id"),
-                        rs.getInt("capacity"),
-                        rs.getBoolean("is_booked"),
-                        rs.getString("booking_time")));
+        List<Table> completeTablesList = new ArrayList<>();
+        String selectAllTablesQuery = "SELECT * FROM tables ORDER BY table_id";
+        try (Connection databaseConnectionForAllTables = DatabaseConnection.fetchConnection();
+             PreparedStatement getAllTablesPreparedStatement = databaseConnectionForAllTables.prepareStatement(selectAllTablesQuery);
+             ResultSet allTablesResultSet = getAllTablesPreparedStatement.executeQuery()) {
+
+            while (allTablesResultSet.next()) {
+                completeTablesList.add(new Table(allTablesResultSet.getInt("table_id"),
+                        allTablesResultSet.getInt("capacity"),
+                        allTablesResultSet.getBoolean("is_booked"),
+                        allTablesResultSet.getString("booking_time")));
             }
-        } catch (SQLException e) {
-            logger.warning("error reading all tables: " + e.getMessage());
+        } catch (SQLException allTablesRetrievalException) {
+            logger.warning("error reading all tables: " + allTablesRetrievalException.getMessage());
         }
-        return result;
+        return completeTablesList;
     }
 
     @Override
     public List<Table> getVacantTables() {
-        List<Table> result = new ArrayList<>();
-        String sql = "SELECT * FROM tables WHERE is_booked = FALSE ORDER BY table_id";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                result.add(new Table(rs.getInt("table_id"),
-                        rs.getInt("capacity"),
-                        rs.getBoolean("is_booked"),
-                        rs.getString("booking_time")));
+        List<Table> emptyTablesList = new ArrayList<>();
+        String selectVacantTablesQuery = "SELECT * FROM tables WHERE is_booked = FALSE ORDER BY table_id";
+        try (Connection databaseConnectionForVacantTables = DatabaseConnection.fetchConnection();
+             PreparedStatement getVacantTablesPreparedStatement = databaseConnectionForVacantTables.prepareStatement(selectVacantTablesQuery);
+             ResultSet vacantTablesResultSet = getVacantTablesPreparedStatement.executeQuery()) {
+
+            while (vacantTablesResultSet.next()) {
+                emptyTablesList.add(new Table(vacantTablesResultSet.getInt("table_id"),
+                        vacantTablesResultSet.getInt("capacity"),
+                        vacantTablesResultSet.getBoolean("is_booked"),
+                        vacantTablesResultSet.getString("booking_time")));
             }
-        } catch (SQLException e) {
-            logger.warning("error reading vacant tables: " + e.getMessage());
+        } catch (SQLException vacantTablesException) {
+            logger.warning("error reading vacant tables: " + vacantTablesException.getMessage());
         }
-        return result;
+        return emptyTablesList;
     }
 }

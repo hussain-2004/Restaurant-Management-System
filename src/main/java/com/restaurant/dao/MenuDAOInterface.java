@@ -19,60 +19,64 @@ public class MenuDAOInterface implements MenuServiceInterface {
 
     @Override
     public List<MenuItem> getAllMenuItems() {
-        List<MenuItem> result = new ArrayList<>();
-        String sql = "SELECT * FROM menu ORDER BY menu_id";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                result.add(new MenuItem(rs.getInt("menu_id"),
-                        rs.getString("item_name"),
-                        rs.getDouble("price"),
-                        rs.getBoolean("is_available")));
+        List<MenuItem> allMenuItemsList = new ArrayList<>();
+        String selectAllMenuItemsQuery = "SELECT * FROM menu ORDER BY menu_id";
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement selectAllMenuItemsStatement = databaseConnection.prepareStatement(selectAllMenuItemsQuery);
+             ResultSet menuItemsResultSet = selectAllMenuItemsStatement.executeQuery()) {
+
+            while (menuItemsResultSet.next()) {
+                allMenuItemsList.add(new MenuItem(menuItemsResultSet.getInt("menu_id"),
+                        menuItemsResultSet.getString("item_name"),
+                        menuItemsResultSet.getDouble("price"),
+                        menuItemsResultSet.getBoolean("is_available")));
             }
-        } catch (SQLException e) {
-            logger.warning("error reading all menu items: " + e.getMessage());
+        } catch (SQLException sqlException) {
+            logger.warning("error reading all menu items: " + sqlException.getMessage());
         }
-        return result;
+        return allMenuItemsList;
     }
 
     @Override
     public boolean addMenuItem(String name, double price) {
-        String sql = "INSERT INTO menu (item_name, price, is_available) VALUES (?, ?, TRUE)";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, name);
-            stmt.setDouble(2, price);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("error adding menu item " + name + ": " + e.getMessage());
+        String insertNewMenuItemQuery = "INSERT INTO menu (item_name, price, is_available) VALUES (?, ?, TRUE)";
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement insertMenuItemStatement = databaseConnection.prepareStatement(insertNewMenuItemQuery)) {
+
+            insertMenuItemStatement.setString(1, name);
+            insertMenuItemStatement.setDouble(2, price);
+            return insertMenuItemStatement.executeUpdate() > 0;
+        } catch (SQLException sqlException) {
+            logger.warning("error adding menu item " + name + ": " + sqlException.getMessage());
             return false;
         }
     }
 
     @Override
     public boolean updatePrice(int menuId, double newPrice) {
-        String sql = "UPDATE menu SET price = ? WHERE menu_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setDouble(1, newPrice);
-            stmt.setInt(2, menuId);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("error updating price for menuId " + menuId + ": " + e.getMessage());
+        String updateMenuItemPriceQuery = "UPDATE menu SET price = ? WHERE menu_id = ?";
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement updateMenuPriceStatement = databaseConnection.prepareStatement(updateMenuItemPriceQuery)) {
+
+            updateMenuPriceStatement.setDouble(1, newPrice);
+            updateMenuPriceStatement.setInt(2, menuId);
+            return updateMenuPriceStatement.executeUpdate() > 0;
+        } catch (SQLException sqlException) {
+            logger.warning("error updating price for menuId " + menuId + ": " + sqlException.getMessage());
             return false;
         }
     }
 
     @Override
     public boolean deleteMenuItem(int menuId) {
-        String sql = "DELETE FROM menu WHERE menu_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, menuId);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("error deleting menu item " + menuId + ": " + e.getMessage());
+        String deleteMenuItemByIdQuery = "DELETE FROM menu WHERE menu_id = ?";
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement deleteMenuItemStatement = databaseConnection.prepareStatement(deleteMenuItemByIdQuery)) {
+
+            deleteMenuItemStatement.setInt(1, menuId);
+            return deleteMenuItemStatement.executeUpdate() > 0;
+        } catch (SQLException sqlException) {
+            logger.warning("error deleting menu item " + menuId + ": " + sqlException.getMessage());
             return false;
         }
     }

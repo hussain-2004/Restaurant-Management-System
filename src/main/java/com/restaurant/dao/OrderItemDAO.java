@@ -16,56 +16,59 @@ public class OrderItemDAO {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     public boolean addItemToOrder(int orderId, int menuId, int quantity) {
-        String sql = "INSERT INTO order_items (order_id, menu_id, quantity, status) VALUES (?, ?, ?, 'PENDING')";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, orderId);
-            stmt.setInt(2, menuId);
-            stmt.setInt(3, quantity);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("failed to add item to order " + orderId + ": " + e.getMessage());
+        String insertOrderItemQuery = "INSERT INTO order_items (order_id, menu_id, quantity, status) VALUES (?, ?, ?, 'PENDING')";
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement insertOrderItemStatement = databaseConnection.prepareStatement(insertOrderItemQuery)) {
+
+            insertOrderItemStatement.setInt(1, orderId);
+            insertOrderItemStatement.setInt(2, menuId);
+            insertOrderItemStatement.setInt(3, quantity);
+            return insertOrderItemStatement.executeUpdate() > 0;
+        } catch (SQLException sqlException) {
+            logger.warning("failed to add item to order " + orderId + ": " + sqlException.getMessage());
             return false;
         }
     }
 
     public List<OrderItem> getItemsByOrder(int orderId) {
-        List<OrderItem> result = new ArrayList<>();
-        String sql = "SELECT oi.item_id, oi.order_id, oi.menu_id, oi.quantity, oi.status, m.item_name " +
+        List<OrderItem> orderItemsListWithMenuDetails = new ArrayList<>();
+        String selectOrderItemsWithMenuNamesQuery = "SELECT oi.item_id, oi.order_id, oi.menu_id, oi.quantity, oi.status, m.item_name " +
                 "FROM order_items oi " +
                 "JOIN menu m ON oi.menu_id = m.menu_id " +
                 "WHERE oi.order_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, orderId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                OrderItem item = new OrderItem(
-                        rs.getInt("item_id"),
-                        rs.getInt("order_id"),
-                        rs.getInt("menu_id"),
-                        rs.getInt("quantity"),
-                        rs.getString("status")
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement selectOrderItemsWithMenuStatement = databaseConnection.prepareStatement(selectOrderItemsWithMenuNamesQuery)) {
+
+            selectOrderItemsWithMenuStatement.setInt(1, orderId);
+            ResultSet orderItemsWithMenuDataResultSet = selectOrderItemsWithMenuStatement.executeQuery();
+
+            while (orderItemsWithMenuDataResultSet.next()) {
+                OrderItem orderItemFromDatabase = new OrderItem(
+                        orderItemsWithMenuDataResultSet.getInt("item_id"),
+                        orderItemsWithMenuDataResultSet.getInt("order_id"),
+                        orderItemsWithMenuDataResultSet.getInt("menu_id"),
+                        orderItemsWithMenuDataResultSet.getInt("quantity"),
+                        orderItemsWithMenuDataResultSet.getString("status")
                 );
-                item.setItemName(rs.getString("item_name")); // 🔹 add dish name
-                result.add(item);
+                orderItemFromDatabase.setItemName(orderItemsWithMenuDataResultSet.getString("item_name")); // 🔹 add dish name
+                orderItemsListWithMenuDetails.add(orderItemFromDatabase);
             }
-        } catch (SQLException e) {
-            logger.warning("cannot fetch items for order " + orderId + ": " + e.getMessage());
+        } catch (SQLException sqlException) {
+            logger.warning("cannot fetch items for order " + orderId + ": " + sqlException.getMessage());
         }
-        return result;
+        return orderItemsListWithMenuDetails;
     }
 
-
     public boolean updateItemStatus(int itemId, String status) {
-        String sql = "UPDATE order_items SET status = ? WHERE item_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, status);
-            stmt.setInt(2, itemId);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.warning("cannot update status for item " + itemId + ": " + e.getMessage());
+        String updateOrderItemStatusQuery = "UPDATE order_items SET status = ? WHERE item_id = ?";
+        try (Connection databaseConnection = DatabaseConnection.fetchConnection();
+             PreparedStatement updateItemStatusStatement = databaseConnection.prepareStatement(updateOrderItemStatusQuery)) {
+
+            updateItemStatusStatement.setString(1, status);
+            updateItemStatusStatement.setInt(2, itemId);
+            return updateItemStatusStatement.executeUpdate() > 0;
+        } catch (SQLException sqlException) {
+            logger.warning("cannot update status for item " + itemId + ": " + sqlException.getMessage());
             return false;
         }
     }

@@ -24,11 +24,11 @@ import java.util.logging.Logger;
 public class CustomerService {
     private static final Logger logger = LoggerUtil.grabLogger();
 
-    private final TableDAO tableDao = new TableDAO();
-    private final CustomerDAO customerDao = new CustomerDAO();
-    private final OrderDAO orderDao = new OrderDAO();
-    private final OrderItemDAO orderItemDao = new OrderItemDAO();
-    private final BillDAO billDao = new BillDAO();
+    private final TableDAO tableDataAccessObject = new TableDAO();
+    private final CustomerDAO customerDataAccessObject = new CustomerDAO();
+    private final OrderDAO orderDataAccessObject = new OrderDAO();
+    private final OrderItemDAO orderItemDataAccessObject = new OrderItemDAO();
+    private final BillDAO billDataAccessObject = new BillDAO();
 
     public String bookTable(Customer customer, int requiredSeats) throws BookingException {
         if (customer.getTableId() != null) {
@@ -36,35 +36,37 @@ public class CustomerService {
             throw new BookingException("You already have a table reserved.");
         }
 
-        var freeTable = tableDao.getAvailableTable(requiredSeats); // 🔹 pass seats
-        if (freeTable == null) {
+        var availableTableForBooking = tableDataAccessObject.getAvailableTable(requiredSeats);
+        if (availableTableForBooking == null) {
             QueueManager.getInstance().putCustomerInQueue(customer);
             return "Sorry no free tables now, but you are placed in waiting line.";
         }
 
-        boolean booked = tableDao.assignTable(freeTable.getTableId());
-        boolean linked = customerDao.assignTableToCustomer(customer.getCustomerId(), freeTable.getTableId());
+        boolean tableBookingResult = tableDataAccessObject.assignTable(availableTableForBooking.getTableId());
+        boolean customerTableLinkingResult = customerDataAccessObject.assignTableToCustomer(customer.getCustomerId(), availableTableForBooking.getTableId());
 
-        if (booked && linked) {
-            customer.setTableId(freeTable.getTableId());
-            logger.info("table " + freeTable.getTableId() + " booked for customer " + customer.getName());
+        if (tableBookingResult && customerTableLinkingResult) {
+            customer.setTableId(availableTableForBooking.getTableId());
 
-            TableMonitorThread monitor = new TableMonitorThread(customer, freeTable.getTableId());
-            monitor.start();
+            logger.info("table " + availableTableForBooking.getTableId() + " booked for customer " + customer.getName());
 
-            return "Table " + freeTable.getTableId() + " booked successfully for " + requiredSeats + " people. Please check in soon.";
+            TableMonitorThread tableMonitoringThread = new TableMonitorThread(customer, availableTableForBooking.getTableId());
+            tableMonitoringThread.start();
+
+            return "Table " + availableTableForBooking.getTableId() + " booked successfully for " + requiredSeats + " people. Please check in soon.";
         } else {
             throw new BookingException("Booking failed due to internal problem.");
         }
     }
 
-
     public String checkIn(Customer customer) throws BookingException {
         if (customer.getTableId() == null) {
             throw new BookingException("No booking found for you, please book table first.");
         }
-        boolean updated = customerDao.updateCheckInStatus(customer.getCustomerId(), true);
-        if (updated) {
+        boolean checkInUpdateResult = customerDataAccessObject.updateCheckInStatus(customer.getCustomerId(), true);
+
+
+        if (checkInUpdateResult) {
             customer.setCheckedIn(true);
             return "You are now checked in successfully.";
         } else {
@@ -74,160 +76,157 @@ public class CustomerService {
 
     public int createOrder(Customer customer, int waiterId) throws OrderException {
         if (customer.getTableId() == null) {
-            throw new OrderException("You don’t have a table, cannot place order.");
+            throw new OrderException("You don't have a table, cannot place order.");
         }
-        int orderId = orderDao.createOrder(customer.getCustomerId(), customer.getTableId(), waiterId);
-        if (orderId == -1) {
+        int createdOrderIdentifier = orderDataAccessObject.createOrder(customer.getCustomerId(), customer.getTableId(), waiterId);
+        if (createdOrderIdentifier == -1) {
             throw new OrderException("Order could not be created.");
         }
-        return orderId;
+        return createdOrderIdentifier;
     }
 
     public boolean addItemToOrder(int orderId, int menuId, int quantity) throws OrderException {
-        boolean done = orderItemDao.addItemToOrder(orderId, menuId, quantity);
-        if (!done) {
+        boolean itemAdditionResult = orderItemDataAccessObject.addItemToOrder(orderId, menuId, quantity);
+        if (!itemAdditionResult) {
             throw new OrderException("Item could not be added to order.");
         }
         return true;
     }
 
-
     public int generateBill(int orderId, double totalAmount) {
-        return billDao.generateBill(orderId, totalAmount);
+        int generatedBillIdentifier = billDataAccessObject.generateBill(orderId, totalAmount);
+        return generatedBillIdentifier;
     }
 
-    // 🔹 New method for combined bill
     public int generateCombinedBill(Customer customer) {
-        return billDao.generateCombinedBill(customer.getCustomerId(), customer.getTableId());
+        int combinedBillIdentifier = billDataAccessObject.generateCombinedBill(customer.getCustomerId(), customer.getTableId());
+        return combinedBillIdentifier;
     }
-
-
 
     public int createOrder(Customer customer) throws OrderException {
         if (customer.getTableId() == null) {
-            throw new OrderException("You don’t have a table, cannot place order.");
+            throw new OrderException("You don't have a table, cannot place order.");
         }
 
-        // 🔹 pick a waiter automatically
-        int waiterId = findAvailableWaiterId();
-        if (waiterId == -1) {
+        int availableWaiterIdentifier = findAvailableWaiterId();
+        if (availableWaiterIdentifier == -1) {
             throw new OrderException("Sorry no waiter available right now.");
         }
 
-        int orderId = orderDao.createOrder(customer.getCustomerId(), customer.getTableId(), waiterId);
-        if (orderId == -1) {
+        int newOrderIdentifier = orderDataAccessObject.createOrder(customer.getCustomerId(), customer.getTableId(), availableWaiterIdentifier);
+        if (newOrderIdentifier == -1) {
             throw new OrderException("Order could not be created.");
         }
-        return orderId;
+        return newOrderIdentifier;
     }
 
-    // temporary simple waiter selection
     private int findAvailableWaiterId() {
-        // for now, just pick the first waiter in staff table
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement("SELECT staff_id FROM staff WHERE role='WAITER' LIMIT 1");
-             ResultSet rs = stmt.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt("staff_id");
+        try (Connection databaseConnectionForWaiterSearch = DatabaseConnection.fetchConnection();
+             PreparedStatement findWaiterPreparedStatement = databaseConnectionForWaiterSearch.prepareStatement("SELECT staff_id FROM staff WHERE role='WAITER' LIMIT 1");
+             ResultSet waiterSearchResultSet = findWaiterPreparedStatement.executeQuery()) {
+
+            if (waiterSearchResultSet.next()) {
+                return waiterSearchResultSet.getInt("staff_id");
             }
-        } catch (Exception e) {
-            LoggerUtil.grabLogger().severe("error finding waiter: " + e.getMessage());
+        } catch (Exception waiterSearchException) {
+            LoggerUtil.grabLogger().severe("error finding waiter: " + waiterSearchException.getMessage());
         }
         return -1;
     }
 
     public int getLatestOrderForCustomer(int customerId) {
-        String sql = "SELECT order_id FROM orders WHERE customer_id = ? ORDER BY order_id DESC LIMIT 1";
-        try (Connection conn = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, customerId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("order_id");
+        String selectLatestOrderQuery = "SELECT order_id FROM orders WHERE customer_id = ? ORDER BY order_id DESC LIMIT 1";
+        try (Connection databaseConnectionForLatestOrder = DatabaseConnection.fetchConnection();
+             PreparedStatement latestOrderPreparedStatement = databaseConnectionForLatestOrder.prepareStatement(selectLatestOrderQuery)) {
+
+            latestOrderPreparedStatement.setInt(1, customerId);
+            ResultSet latestOrderResultSet = latestOrderPreparedStatement.executeQuery();
+            if (latestOrderResultSet.next()) {
+                return latestOrderResultSet.getInt("order_id");
             }
-        } catch (Exception e) {
-            LoggerUtil.grabLogger().severe("Error finding latest order: " + e.getMessage());
+        } catch (Exception latestOrderException) {
+            LoggerUtil.grabLogger().severe("Error finding latest order: " + latestOrderException.getMessage());
         }
         return -1;
     }
 
     public double calculateOrderTotal(int orderId) {
-        String sql = "SELECT oi.quantity, m.price " +
+        String orderTotalCalculationQuery = "SELECT oi.quantity, m.price " +
                 "FROM order_items oi " +
                 "JOIN menu m ON oi.menu_id = m.menu_id " +
                 "WHERE oi.order_id = ?";
-        double total = 0.0;
-        try (Connection conn = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, orderId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                int qty = rs.getInt("quantity");
-                double price = rs.getDouble("price");
-                total += qty * price;
+        double orderTotalAmount = 0.0;
+        try (Connection databaseConnectionForOrderTotal = DatabaseConnection.fetchConnection();
+             PreparedStatement orderTotalPreparedStatement = databaseConnectionForOrderTotal.prepareStatement(orderTotalCalculationQuery)) {
+
+            orderTotalPreparedStatement.setInt(1, orderId);
+            ResultSet orderItemsWithPricesResultSet = orderTotalPreparedStatement.executeQuery();
+            while (orderItemsWithPricesResultSet.next()) {
+                int itemQuantity = orderItemsWithPricesResultSet.getInt("quantity");
+                double itemPrice = orderItemsWithPricesResultSet.getDouble("price");
+                orderTotalAmount += itemQuantity * itemPrice;
             }
-        } catch (Exception e) {
-            LoggerUtil.grabLogger().severe("Error calculating total for order " + orderId + ": " + e.getMessage());
+        } catch (Exception orderTotalCalculationException) {
+            LoggerUtil.grabLogger().severe("Error calculating total for order " + orderId + ": " + orderTotalCalculationException.getMessage());
         }
-        return total;
+        return orderTotalAmount;
     }
 
     public boolean registerCustomer(String name, String username, String password) {
-        String insertUser = "INSERT INTO users (username, password, role) VALUES (?, ?, 'CUSTOMER') RETURNING user_id";
-        String insertCustomer = "INSERT INTO customers (user_id, name) VALUES (?, ?)";
+        String insertUserQuery = "INSERT INTO users (username, password, role) VALUES (?, ?, 'CUSTOMER') RETURNING user_id";
+        String insertCustomerQuery = "INSERT INTO customers (user_id, name) VALUES (?, ?)";
 
-        try (Connection conn = DatabaseConnection.fetchConnection();
-             PreparedStatement stmtUser = conn.prepareStatement(insertUser);
+        try (Connection databaseConnectionForRegistration = DatabaseConnection.fetchConnection();
+             PreparedStatement userInsertionPreparedStatement = databaseConnectionForRegistration.prepareStatement(insertUserQuery);
         ) {
-            stmtUser.setString(1, username);
-            stmtUser.setString(2, password);
-            ResultSet rs = stmtUser.executeQuery();
-            if (rs.next()) {
-                int userId = rs.getInt("user_id");
+            userInsertionPreparedStatement.setString(1, username);
+            userInsertionPreparedStatement.setString(2, password);
+            ResultSet userInsertionResultSet = userInsertionPreparedStatement.executeQuery();
+            if (userInsertionResultSet.next()) {
+                int createdUserIdentifier = userInsertionResultSet.getInt("user_id");
 
-                try (PreparedStatement stmtCustomer = conn.prepareStatement(insertCustomer)) {
-                    stmtCustomer.setInt(1, userId);
-                    stmtCustomer.setString(2, name);
-                    stmtCustomer.executeUpdate();
+                try (PreparedStatement customerInsertionPreparedStatement = databaseConnectionForRegistration.prepareStatement(insertCustomerQuery)) {
+                    customerInsertionPreparedStatement.setInt(1, createdUserIdentifier);
+                    customerInsertionPreparedStatement.setString(2, name);
+                    customerInsertionPreparedStatement.executeUpdate();
                 }
                 return true;
             }
-        } catch (SQLException e) {
-            LoggerUtil.grabLogger().severe("Error registering customer: " + e.getMessage());
+        } catch (SQLException customerRegistrationException) {
+            LoggerUtil.grabLogger().severe("Error registering customer: " + customerRegistrationException.getMessage());
             return false;
         }
         return false;
     }
 
     public List<OrderItem> getAllOrderItemsForCustomer(int customerId, int tableId) {
-        List<OrderItem> result = new ArrayList<>();
-        String sql = "SELECT oi.item_id, oi.order_id, oi.menu_id, m.item_name, m.price, oi.quantity, oi.status " +
+        List<OrderItem> customerOrderItemsList = new ArrayList<>();
+        String selectAllOrderItemsForCustomerQuery = "SELECT oi.item_id, oi.order_id, oi.menu_id, m.item_name, m.price, oi.quantity, oi.status " +
                 "FROM orders o " +
                 "JOIN order_items oi ON o.order_id = oi.order_id " +
                 "JOIN menu m ON oi.menu_id = m.menu_id " +
                 "WHERE o.customer_id = ? AND o.table_id = ?";
-        try (Connection conn = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, customerId);
-            stmt.setInt(2, tableId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                OrderItem item = new OrderItem(
-                        rs.getInt("item_id"),
-                        rs.getInt("order_id"),
-                        rs.getInt("menu_id"),
-                        rs.getInt("quantity"),
-                        rs.getString("status")
+        try (Connection databaseConnectionForOrderItems = DatabaseConnection.fetchConnection();
+             PreparedStatement orderItemsSelectionPreparedStatement = databaseConnectionForOrderItems.prepareStatement(selectAllOrderItemsForCustomerQuery)) {
+
+            orderItemsSelectionPreparedStatement.setInt(1, customerId);
+            orderItemsSelectionPreparedStatement.setInt(2, tableId);
+            ResultSet customerOrderItemsResultSet = orderItemsSelectionPreparedStatement.executeQuery();
+            while (customerOrderItemsResultSet.next()) {
+                OrderItem orderItemFromDatabase = new OrderItem(
+                        customerOrderItemsResultSet.getInt("item_id"),
+                        customerOrderItemsResultSet.getInt("order_id"),
+                        customerOrderItemsResultSet.getInt("menu_id"),
+                        customerOrderItemsResultSet.getInt("quantity"),
+                        customerOrderItemsResultSet.getString("status")
                 );
-                item.setItemName(rs.getString("item_name"));
-                item.setPrice(rs.getDouble("price")); // add price in OrderItem model
-                result.add(item);
+                orderItemFromDatabase.setItemName(customerOrderItemsResultSet.getString("item_name"));
+                orderItemFromDatabase.setPrice(customerOrderItemsResultSet.getDouble("price"));
+                customerOrderItemsList.add(orderItemFromDatabase);
             }
-        } catch (SQLException e) {
-            LoggerUtil.grabLogger().severe("Error fetching order items for bill: " + e.getMessage());
+        } catch (SQLException orderItemsRetrievalException) {
+            LoggerUtil.grabLogger().severe("Error fetching order items for bill: " + orderItemsRetrievalException.getMessage());
         }
-        return result;
+        return customerOrderItemsList;
     }
-
-
 }

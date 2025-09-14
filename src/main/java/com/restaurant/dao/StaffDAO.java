@@ -18,26 +18,28 @@ public class StaffDAO {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     public AbstractStaff getStaffByUserId(int userId) {
-        String sql = "SELECT * FROM staff WHERE user_id = ?";
-        try (Connection connection = DatabaseConnection.fetchConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                int staffId = rs.getInt("staff_id");
-                String name = rs.getString("name");
-                String role = rs.getString("role");
+        String staffSelectionQuery = "SELECT * FROM staff WHERE user_id = ?";
+        try (Connection databaseConnectionForStaffOperations = DatabaseConnection.fetchConnection();
+             PreparedStatement staffQueryPreparedStatement = databaseConnectionForStaffOperations.prepareStatement(staffSelectionQuery)) {
 
-                return switch (role.toUpperCase()) {
-                    case "WAITER" -> new Waiter(staffId, userId, name);
-                    case "CHEF" -> new Chef(staffId, userId, name);
-                    case "MANAGER" -> new Manager(staffId, userId, name);
-                    case "ADMIN" -> new Admin(staffId, userId, name);
+            staffQueryPreparedStatement.setInt(1, userId);
+            ResultSet staffDataResultSet = staffQueryPreparedStatement.executeQuery();
+
+            if (staffDataResultSet.next()) {
+                int staffIdentifier = staffDataResultSet.getInt("staff_id");
+                String staffMemberName = staffDataResultSet.getString("name");
+                String staffRoleType = staffDataResultSet.getString("role");
+
+                return switch (staffRoleType.toUpperCase()) {
+                    case "WAITER" -> new Waiter(staffIdentifier, userId, staffMemberName);
+                    case "CHEF" -> new Chef(staffIdentifier, userId, staffMemberName);
+                    case "MANAGER" -> new Manager(staffIdentifier, userId, staffMemberName);
+                    case "ADMIN" -> new Admin(staffIdentifier, userId, staffMemberName);
                     default -> null;
                 };
             }
-        } catch (SQLException e) {
-            logger.warning("cannot fetch staff for user " + userId + ": " + e.getMessage());
+        } catch (SQLException staffRetrievalException) {
+            logger.warning("cannot fetch staff details for user " + userId + ": " + staffRetrievalException.getMessage());
         }
         return null;
     }

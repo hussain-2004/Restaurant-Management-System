@@ -16,30 +16,32 @@ import java.util.logging.Logger;
 public class ChefService {
     private static final Logger logger = LoggerUtil.grabLogger();
 
-    private final OrderDAO orderDao = new OrderDAO();
-    private final OrderItemDAO orderItemDao = new OrderItemDAO();
+    private final OrderDAO orderDataAccessLayer = new OrderDAO();
+    private final OrderItemDAO orderItemDataAccessLayer = new OrderItemDAO();
 
     public List<Order> getPendingOrders() {
-        return orderDao.getOrdersByStatus("PENDING");
+        List<Order> pendingOrdersListForKitchen = orderDataAccessLayer.getOrdersByStatus("PENDING");
+        return pendingOrdersListForKitchen;
     }
 
     public List<OrderItem> getItemsForOrder(int orderId) {
-        return orderItemDao.getItemsByOrder(orderId);
+        List<OrderItem> orderItemsListForSpecificOrder = orderItemDataAccessLayer.getItemsByOrder(orderId);
+        return orderItemsListForSpecificOrder;
     }
 
     public boolean markOrderItemCompleted(int itemId) {
-        boolean ok = orderItemDao.updateItemStatus(itemId, "COMPLETED");
-        if (ok) {
+        boolean itemCompletionUpdateResult = orderItemDataAccessLayer.updateItemStatus(itemId, "COMPLETED");
+        if (itemCompletionUpdateResult) {
             logger.info("order item " + itemId + " marked completed by chef");
         }
-        return ok;
+        return itemCompletionUpdateResult;
     }
 
     public boolean markOrderReady(int orderId) {
-        boolean ok = orderDao.updateOrderStatus(orderId, "READY");
-        if (ok) {
+        boolean orderReadyStatusUpdateResult = orderDataAccessLayer.updateOrderStatus(orderId, "READY");
+        if (orderReadyStatusUpdateResult) {
             logger.info("order " + orderId + " marked ready by chef");
         }
-        return ok;
+        return orderReadyStatusUpdateResult;
     }
 }

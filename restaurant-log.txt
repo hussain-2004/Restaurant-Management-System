@@ -63,3 +63,19 @@ Sept 14, 2025 2:24:04 PM com.restaurant.dao.BillDAO generateBill
 INFO: bill 12 created for order 11
 Sept 14, 2025 2:36:24 PM com.restaurant.dao.BillDAO generateBill
 INFO: bill 13 created for order 11
+Sept 14, 2025 5:02:48 PM com.restaurant.dao.BillDAO generateBill
+INFO: bill 16 created for order 20
+Sept 14, 2025 5:02:48 PM com.restaurant.service.ManagerService recordPayment
+INFO: bill 16 paid and table 8 freed
+Sept 14, 2025 5:02:48 PM com.restaurant.dao.BillDAO generateBill
+INFO: bill 17 created for order 20
+Sept 14, 2025 5:03:24 PM com.restaurant.dao.BillDAO generateBill
+INFO: bill 18 created for order 21
+Sept 14, 2025 5:03:24 PM com.restaurant.service.ManagerService recordPayment
+INFO: bill 18 paid and table 9 freed
+Sept 14, 2025 5:03:25 PM com.restaurant.dao.BillDAO generateBill
+INFO: bill 19 created for order 21
+Sept 14, 2025 5:07:08 PM com.restaurant.service.WaiterService markOrderAsServed
+INFO: order 22 marked served by waiter
+Sept 14, 2025 5:07:27 PM com.restaurant.service.WaiterService markOrderAsServed
+INFO: order 23 marked served by waiter

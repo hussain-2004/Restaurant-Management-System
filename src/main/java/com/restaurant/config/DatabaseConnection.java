@@ -42,11 +42,15 @@ public class DatabaseConnection {
     }
 
     public static Connection fetchConnection() {
+        if (instance == null) {
+            getInstance(); // ensure constructor runs and loads props
+        }
         try {
             return DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
         } catch (Exception exception) {
             throw new RuntimeException("Some issue while connecting database: " + exception.getMessage());
         }
     }
+
 }
 
