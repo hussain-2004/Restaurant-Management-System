@@ -223,14 +223,3 @@ Restaurant-Management-System/
 ├── README.md                     # Project documentation
 └── restaurant-log.txt            # Log file
 ```
-
----
-
-## 🚀 Future Enhancements
-
-* Web-based version (Spring Boot + React)
-* Payment gateway integration
-* Advanced waiter allocation algorithm
-* Analytics & reporting dashboard
-
----
