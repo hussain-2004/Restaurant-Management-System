@@ -85,13 +85,7 @@ db.driver=org.postgresql.Driver
 ### First Time Setup
 
 * **Start the Application:** Run the `Main` class from your IDE or via Maven.
-* **Database Initialization:** Run the provided schema file (`db_schema.sql`) to create required tables.
-* **Default Admin Login:**
-
-  ```
-  Username: admin
-  Password: admin123
-  ```
+* **Database Initialization:** Run the provided schema file (`db_script.sql`) to create required tables.
 
 ### Basic Usage Flow
 
