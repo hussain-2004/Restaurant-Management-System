@@ -4,11 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="64ca89ff-801c-4849-a34b-68a2edd6be66" name="Changes" comment="changed main structure">
+    <list default="true" id="64ca89ff-801c-4849-a34b-68a2edd6be66" name="Changes" comment="final push">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/restaurant/dao/MenuDAOInterface.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/restaurant/dao/MenuDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/restaurant/service/AdminService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/restaurant/service/AdminService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/restaurant/db_script.sql" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -141,7 +139,23 @@
       <option name="project" value="LOCAL" />
       <updated>1757870840306</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="modified readme file">
+      <option name="closed" value="true" />
+      <created>1757871860258</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1757871860258</updated>
+    </task>
+    <task id="LOCAL-00008" summary="final push">
+      <option name="closed" value="true" />
+      <created>1757872000159</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1757872000159</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -162,6 +176,8 @@
     <MESSAGE value="updated with readme file" />
     <MESSAGE value="updated with unit tests" />
     <MESSAGE value="changed main structure" />
-    <option name="LAST_COMMIT_MESSAGE" value="changed main structure" />
+    <MESSAGE value="modified readme file" />
+    <MESSAGE value="final push" />
+    <option name="LAST_COMMIT_MESSAGE" value="final push" />
   </component>
 </project>
