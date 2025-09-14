@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * Handles menu item operations including retrieval and administrative updates.
  */
-public class MenuDAOInterface implements MenuServiceInterface {
+public class MenuDAO implements MenuServiceInterface {
     private static final Logger logger = LoggerUtil.grabLogger();
 
     @Override

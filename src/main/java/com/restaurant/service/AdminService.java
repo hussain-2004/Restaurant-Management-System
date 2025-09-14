@@ -1,6 +1,6 @@
 package com.restaurant.service;
 
-import com.restaurant.dao.MenuDAOInterface;
+import com.restaurant.dao.MenuDAO;
 import com.restaurant.dao.StaffDAO;
 import com.restaurant.model.AbstractStaff;
 import com.restaurant.model.MenuItem;
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 public class AdminService {
     private static final Logger logger = LoggerUtil.grabLogger();
 
-    private final MenuDAOInterface menuDataAccessObject = new MenuDAOInterface();
+    private final MenuDAO menuDataAccessObject = new MenuDAO();
     private final StaffDAO staffDataAccessObject = new StaffDAO();
 
     public List<MenuItem> seeAllMenuItems() {

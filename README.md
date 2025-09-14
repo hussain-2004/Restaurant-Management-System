@@ -85,7 +85,7 @@ db.driver=org.postgresql.Driver
 ### First Time Setup
 
 * **Start the Application:** Run the `Main` class from your IDE or via Maven.
-* **Database Initialization:** Run the provided schema file (`schema.sql`) to create required tables.
+* **Database Initialization:** Run the provided schema file (`db_schema.sql`) to create required tables.
 * **Default Admin Login:**
 
   ```
@@ -135,78 +135,99 @@ db.driver=org.postgresql.Driver
 
 ```plaintext
 Restaurant-Management-System/
-├── pom.xml                          # Maven build file
-├── README.md                        # Project documentation
+├── .idea/                        # IntelliJ project settings
 ├── src/
 │   ├── main/
 │   │   ├── java/com/restaurant/
-│   │   │   ├── config/              # Database & configuration
+│   │   │   ├── cli/              # Command Line Interfaces for roles
+│   │   │   │   ├── AdminCLI.java
+│   │   │   │   ├── AuthCLI.java
+│   │   │   │   ├── BaseCLI.java
+│   │   │   │   ├── ChefCLI.java
+│   │   │   │   ├── CustomerCLI.java
+│   │   │   │   ├── MainCLI.java
+│   │   │   │   ├── ManagerCLI.java
+│   │   │   │   └── WaiterCLI.java
+│   │   │   │
+│   │   │   ├── config/           # Database config
 │   │   │   │   └── DatabaseConnection.java
 │   │   │   │
-│   │   │   ├── dao/                 # Data Access Layer
+│   │   │   ├── dao/              # Data Access Objects
 │   │   │   │   ├── BillDAO.java
 │   │   │   │   ├── CustomerDAO.java
 │   │   │   │   ├── MenuDAO.java
 │   │   │   │   ├── OrderDAO.java
 │   │   │   │   ├── OrderItemDAO.java
+│   │   │   │   ├── PaymentDAO.java
 │   │   │   │   ├── StaffDAO.java
 │   │   │   │   └── TableDAO.java
 │   │   │   │
-│   │   │   ├── enums/               # Enums for fixed constants
-│   │   │   │   ├── OrderStatus.java
-│   │   │   │   ├── PaymentStatus.java
-│   │   │   │   └── Roles.java
+│   │   │   ├── exceptions/       # Custom exception handling
+│   │   │   │   ├── AuthenticationException.java
+│   │   │   │   ├── BookingException.java
+│   │   │   │   ├── OrderException.java
+│   │   │   │   └── PaymentException.java
 │   │   │   │
-│   │   │   ├── exceptions/          # Custom exceptions
-│   │   │   │   └── DatabaseException.java
-│   │   │   │
-│   │   │   ├── model/               # Entity models
-│   │   │   │   ├── Bill.java
+│   │   │   ├── model/            # Entity models
+│   │   │   │   ├── AbstractStaff.java
+│   │   │   │   ├── AbstractUser.java
+│   │   │   │   ├── Admin.java
+│   │   │   │   ├── Chef.java
 │   │   │   │   ├── Customer.java
-│   │   │   │   ├── Menu.java
+│   │   │   │   ├── Manager.java
+│   │   │   │   ├── MenuItem.java
 │   │   │   │   ├── Order.java
 │   │   │   │   ├── OrderItem.java
-│   │   │   │   ├── Staff.java
-│   │   │   │   └── Table.java
+│   │   │   │   ├── Table.java
+│   │   │   │   └── Waiter.java
 │   │   │   │
-│   │   │   ├── service/             # Business logic
+│   │   │   ├── service/          # Business logic layer
+│   │   │   │   ├── interfaces/   # Service interfaces
+│   │   │   │   │   ├── MenuServiceInterface.java
+│   │   │   │   │   ├── OrderServiceInterface.java
+│   │   │   │   │   └── TableServiceInterface.java
+│   │   │   │   │
 │   │   │   │   ├── AdminService.java
-│   │   │   │   ├── BillService.java
 │   │   │   │   ├── ChefService.java
 │   │   │   │   ├── CustomerService.java
-│   │   │   │   ├── OrderService.java
+│   │   │   │   ├── ManagerService.java
+│   │   │   │   ├── StaffService.java
 │   │   │   │   └── WaiterService.java
 │   │   │   │
-│   │   │   ├── service/interfaces/  # Contracts for services
-│   │   │   │   ├── IAdminService.java
-│   │   │   │   ├── IChefService.java
-│   │   │   │   ├── ICustomerService.java
-│   │   │   │   └── IWaiterService.java
-│   │   │   │
-│   │   │   ├── util/                # Utility classes
+│   │   │   ├── util/             # Helper utilities
+│   │   │   │   ├── AuthHelper.java
 │   │   │   │   ├── LoggerUtil.java
 │   │   │   │   ├── QueueManager.java
-│   │   │   │   └── ValidationUtil.java
+│   │   │   │   └── TableMonitorThread.java
 │   │   │   │
-│   │   │   └── Main.java            # Application entry point
+│   │   │   └── Main.java         # Application entry point
 │   │   │
-│   │   └── resources/
-│   │       ├── application.properties  # DB configs
-│   │       └── schema.sql              # Initial SQL schema
+│   │   └── resources/            # Configurations & SQL scripts
+│   │       ├── application.properties
+│   │       └── db_script.sql
 │   │
-│   └── test/java/com/restaurant/
+│   └── test/java/com/restaurant/ # Unit tests
 │       ├── dao/
 │       │   └── CustomerDAOTest.java
-│       │
 │       ├── service/
 │       │   ├── AdminServiceTest.java
 │       │   ├── ChefServiceTest.java
 │       │   ├── CustomerServiceTest.java
+│       │   ├── ManagerServiceTest.java
+│       │   ├── StaffServiceTest.java
 │       │   └── WaiterServiceTest.java
-│       │
-│       └── TestUtils.java             # Helpers for tests
+│       └── model/ (if entity tests exist)
 │
-└── .gitignore                        # Git ignore file
+├── target/                       # Compiled classes (generated)
+│   ├── classes/
+│   ├── generated-sources/
+│   ├── generated-test-sources/
+│   └── test-classes/
+│
+├── .gitignore
+├── pom.xml                       # Maven build configuration
+├── README.md                     # Project documentation
+└── restaurant-log.txt            # Log file
 ```
 
 ---
